@@ -119,4 +119,22 @@ print("nb clusters =",kres,", nb feuilles = ", leaves, " runtime = ", round((tps
 
 
 #######################################################################
+datasets = ["square1.arff", "xclara.arff"]
+linkages = ["ward", "average", "complete", "single"]
+
+for data in datasets:
+    databrut = arff.loadarff(open(path + data, 'r'))
+    datanp = np.array([[x[0], x[1]] for x in databrut[0]])
+    f0 = datanp[:,0]
+    f1 = datanp[:,1]
+    
+    for link in linkages:
+        model = cluster.AgglomerativeClustering(linkage=link, n_clusters=None, distance_threshold=10)
+        model = model.fit(datanp)
+        
+        plt.figure(figsize=(6, 6))
+        plt.scatter(f0, f1, c=model.labels_, s=8)
+        plt.title(f"Clustering agglomératif ({link}, data={data})")
+        plt.show()
+
 

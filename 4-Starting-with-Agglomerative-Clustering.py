@@ -12,7 +12,7 @@ from sklearn import metrics
 
 
 path = './artificial/'
-name="xclara.arff"
+name="long1.arff"
 
 #path_out = './fig/'
 databrut = arff.loadarff(open(path+str(name), 'r'))
@@ -79,3 +79,107 @@ print("nb clusters =",kres,", nb feuilles = ", leaves, " runtime = ", round((tps
 
 
 #######################################################################
+
+from sklearn.metrics import silhouette_score
+
+# Choix de la méthode de liaison
+linkage_method = 'average'  
+
+# Intervalle de seuils ou de nombres de clusters
+dist_thresholds = np.linspace(1, 50, 50) 
+best_score = -1
+best_threshold = None
+
+for dist_threshold in dist_thresholds:
+    model = cluster.AgglomerativeClustering(
+        distance_threshold=dist_threshold, 
+        linkage=linkage_method, 
+        n_clusters=None
+    )
+    model.fit(datanp)
+    labels = model.labels_
+    score = silhouette_score(datanp, labels)
+    if score > best_score:
+        best_score = score
+        best_threshold = dist_threshold
+
+print(f"Meilleur seuil de distance pour {linkage_method}: {best_threshold}")
+print(f"Score de silhouette: {best_score}") 
+
+
+################################################################### 
+
+from sklearn.metrics.pairwise import euclidean_distances
+from sklearn.metrics import pairwise_distances
+
+# Fonctions pour le calcul de la regroupement et de la séparation 
+
+model = cluster.AgglomerativeClustering(
+        distance_threshold=best_threshold, 
+        linkage=linkage_method, 
+        n_clusters=None
+    )
+def regroupement_score(X, labels):
+    pairwise_distances_matrix = euclidean_distances(X)
+    mask = labels[:, None] == labels
+    return pairwise_distances_matrix[mask].mean()
+
+def separation_score(X, labels):
+    pairwise_distances_matrix = euclidean_distances(X)
+    mask = labels[:, None] != labels
+    return pairwise_distances_matrix[mask].mean() 
+
+regroupement = regroupement_score(datanp, labels)
+separation = separation_score(datanp, labels)
+
+print(f"Score de regroupement de la solution obtenue:{regroupement:.3f}")
+print(f"Score de séparation de la solution obtenue: {separation:.3f}") 
+
+
+
+
+
+
+####################################################################### 
+
+
+
+
+
+linkages = ["ward", "complete", "average", "single"]
+results = []
+
+# Itération sur les différentes méthodes de linkage
+for linkage_method in linkages:
+    # Mesure du temps de début
+    tps1 = time.time()
+    
+    # Application du clustering agglomératif
+    model = cluster.AgglomerativeClustering(linkage=linkage_method, n_clusters=None, distance_threshold=10)
+    model = model.fit(datanp)
+    labels = model.labels_
+    
+    # Calculer le score de silhouette
+    score = silhouette_score(datanp, labels)
+    
+    # Mesure du temps de fin
+    tps2 = time.time()
+    
+    # Calculer le temps d'exécution
+    runtime = round((tps2 - tps1) * 1000, 2)  # en millisecondes
+    k = model.n_clusters_
+    leaves = model.n_leaves_
+    results.append((linkage_method, k, leaves, runtime, score))
+
+# Afficher les résultats
+print(f"{'Linkage':<10} {'Nb Clusters':<12} {'Nb Leaves':<10} {'Runtime (ms)':<12} {'Silhouette Score':<17}")
+print('-' * 65)
+for res in results:
+    print(f"{res[0]:<10} {res[1]:<12} {res[2]:<10} {res[3]:<12.2f} {res[4]:<17.4f}")
+
+    
+
+
+
+
+
